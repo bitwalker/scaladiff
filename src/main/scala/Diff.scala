@@ -92,14 +92,10 @@ object Diff {
    */
   def lcs(a: String, b: String): String = {
     // Empty pair of strings? No LCS...
-    if (a.size==0 || b.size==0) {
-      return ""
-    }
+    if (a.size == 0 || b.size == 0) { return "" }
     else {
       // Same string? LCS is the string itself..
-      if (a==b) {
-        return a
-      }
+      if (a == b) { return a }
       else {
         // Construct the LCS matrix using the lengths of the subsequences,
         // this is done to reduce the memory needed to solve the problem
@@ -117,21 +113,16 @@ object Diff {
 
         // Starting from the last cell in the matrix, trace back towards the origin, accumulating commonalities
         val builder = new StringBuilder()
-        var x = a.size
-        var y = b.size
+        var (x, y) = (a.size, b.size)
         do {
-          if (lengths(x)(y) == lengths(x - 1)(y)) {
-            x -= 1
-          }
-          else if (lengths(x)(y) == lengths(x)(y - 1)) {
-            y -= 1
-          }
+          if      (lengths(x)(y) == lengths(x - 1)(y)) { x -= 1 }
+          else if (lengths(x)(y) == lengths(x)(y - 1)) { y -= 1 }
           else {
             builder += a(x-1)
             x -= 1
             y -= 1
           }
-        } while (x!=0 && y!=0)
+        } while (x != 0 && y != 0)
 
         // Due to the traceback approach, we built the result in reverse
         builder.toString.reverse
