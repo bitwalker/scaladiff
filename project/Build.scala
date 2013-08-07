@@ -7,4 +7,12 @@ object Builds extends Build {
     organization := "net.ironforged",
     scalaVersion := "2.10.2"
   )
+
+  lazy val app = Project(
+    "scaladiff",
+    file("."),
+    settings = buildSettings
+  ) settings(
+    // placeholder
+  )
 }
