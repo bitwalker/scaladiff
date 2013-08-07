@@ -85,48 +85,56 @@ object Diff {
 
   /**
    * Generate the longest common subsequence between two strings
+   * using the traceback approach to solving this problem
    * @param a First string
    * @param b Second string
    * @return Longest common subsequence
    */
   def lcs(a: String, b: String): String = {
-    if (a.size==0 || b.size==0) ""
+    // Empty pair of strings? No LCS...
+    if (a.size==0 || b.size==0) {
+      return ""
+    }
     else {
+      // Same string? LCS is the string itself..
       if (a==b) {
-        a
+        return a
       }
       else {
-        val lengths = Array.ofDim[Int](a.size+1,b.size+1)
+        // Construct the LCS matrix using the lengths of the subsequences,
+        // this is done to reduce the memory needed to solve the problem
+        val lengths = Array.ofDim[Int](a.size + 1,b.size + 1)
         for (i <- 0 until a.size) {
           for (j <- 0 until b.size) {
             if (a(i) == b(j)) {
-              lengths(i+1)(j+1) = lengths(i)(j) + 1
+              lengths(i + 1)(j + 1) = lengths(i)(j) + 1
             }
             else {
-              lengths(i+1)(j+1) = scala.math.max(lengths(i+1)(j),lengths(i)(j+1))
+              lengths(i + 1)(j + 1) = Math.max(lengths(i + 1)(j),lengths(i)(j + 1))
             }
           }
         }
 
-        // read the substring out from the matrix
-        val sb = new StringBuilder()
+        // Starting from the last cell in the matrix, trace back towards the origin, accumulating commonalities
+        val builder = new StringBuilder()
         var x = a.size
         var y = b.size
         do {
-          if (lengths(x)(y) == lengths(x-1)(y)) {
+          if (lengths(x)(y) == lengths(x - 1)(y)) {
             x -= 1
           }
-          else if (lengths(x)(y) == lengths(x)(y-1)) {
+          else if (lengths(x)(y) == lengths(x)(y - 1)) {
             y -= 1
           }
           else {
-            assert(a(x-1) == b(y-1))
-            sb += a(x-1)
+            builder += a(x-1)
             x -= 1
             y -= 1
           }
         } while (x!=0 && y!=0)
-        sb.toString.reverse
+
+        // Due to the traceback approach, we built the result in reverse
+        builder.toString.reverse
       }
     }
   }
