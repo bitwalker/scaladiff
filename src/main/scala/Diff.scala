@@ -8,7 +8,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * Create a nice HTML report of the diff
    */
   def html: String = {
-    Diff.cleanup(diffs).foldLeft("") { (html, diff) =>
+    Diff.clean(diffs).foldLeft("") { (html, diff) =>
       val text = diff.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "&para;<br>")
       val tag = diff.op match {
         case Insert => s"<ins>$text</ins>"
@@ -39,7 +39,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * Convert the diff into a more human-readable format
    */
   def humanized: String = {
-    Diff.cleanup(diffs).foldLeft("") { (res, diff) =>
+    Diff.clean(diffs).foldLeft("") { (res, diff) =>
       val text = diff.text
       val op = diff.op match {
         case Insert => s"+$text"
@@ -52,6 +52,9 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
 }
 
 object Diff {
+  // Cost of an empty edit operation in terms of edit characters
+  private val MAX_EDIT_COST = 4
+
   /**
    * Creates a new Diff
    * @param a First string
@@ -98,6 +101,93 @@ object Diff {
     Diff(a, b, result)
   }
 
+
+  /**
+   * Eliminate operationally trivial equalities, then reorder and merge both edits and equalities.
+   * @param diffs List[Operation]
+   */
+  def clean(diffs: List[Operation]): List[Operation] = {
+    var buffer = diffs
+    var changes = false
+    var equalities = List.empty[Int] // Stack of indices where equalities are found
+    var lastEquality = "" // Always equal to equalities.last.text
+    var currentIndex = 0
+    var preInsert  = false // Is there an insert op before the last equality
+    var preDelete  = false // Is there a delete op before the last equality
+    var postInsert = false // Is there an insert op after the last equality
+    var postDelete = false // Is there a delete op after the last equality
+
+    while (currentIndex < buffer.length) {
+      if (buffer(currentIndex).op == Equals) {
+        if (buffer(currentIndex).text.length < MAX_EDIT_COST && (postInsert || postDelete)) {
+          // Candidate found
+          equalities   = equalities :+ currentIndex
+          preInsert    = postInsert
+          preDelete    = postDelete
+          lastEquality = buffer(currentIndex).text
+        }
+        else {
+          // Not a candidate
+          equalities   = List.empty[Int]
+          lastEquality = ""
+        }
+        postInsert = false
+        postDelete = false
+      }
+      else { // An insertion or deletion
+        buffer(currentIndex).op match {
+          case Delete => postDelete = true
+          case Insert => postInsert = true
+        }
+
+        /**
+         * Five types to be split:
+         * +A-BXY+C-D
+         * +AX+C-D
+         * +A-BX+C
+         * +AX+C-D
+         * +A-BX-C
+         */
+        val bools = Seq(preInsert, preDelete, postInsert, postDelete)
+        if (!lastEquality.isEmpty && (bools.forall(b=>b) || ((lastEquality.length < MAX_EDIT_COST / 2) && bools.filter(b=>b).length == 3))) {
+          // Duplicate record
+          // Change second copy to insert
+          println()
+          println(s"PRE: buffer: $buffer")
+          val lastEqualityIdx = equalities.last
+          val nextItem = buffer(equalities.last + 1).text
+          println(s"PRE: currentIndex: $currentIndex, lastEquality: $lastEquality, nextOne: $nextItem")
+          buffer = buffer.take(equalities.last) ++
+            List(Operation(Delete, lastEquality), Operation(Insert, lastEquality)) ++
+            buffer.drop(equalities.last + 1)
+          equalities = equalities.dropRight(1)
+          println()
+          println(s"POST: buffer: $buffer")
+          lastEquality = ""
+          if (preInsert && preDelete) {
+            // No changes made which could affect previous entry, keep going
+            postInsert = true
+            postDelete = true
+            equalities = List.empty[Int]
+          }
+          else {
+            if (!equalities.isEmpty) {
+              equalities   = equalities.dropRight(1) // Throw away previous equality
+              currentIndex = equalities.lastOption.getOrElse(-1)
+            }
+            postInsert = false
+            postDelete = false
+          }
+          changes = true
+        }
+      }
+      currentIndex = inc(currentIndex)
+    }
+
+    //if (changes) cleanup(buffer) else buffer
+    cleanMerge(buffer)
+  }
+
   /**
    * Generate the longest common subsequence between two strings
    * using the traceback approach to solving this problem
@@ -105,7 +195,7 @@ object Diff {
    * @param b Second string
    * @return Longest common subsequence
    */
-  def lcs(a: String, b: String): String = {
+  private def lcs(a: String, b: String): String = {
     // Empty pair of strings? No LCS...
     if (a.size == 0 || b.size == 0) { return "" }
     else {
@@ -149,7 +239,7 @@ object Diff {
    * Reorder and merge edits, equalities. Any edit section can move as long as it doesn't cross an equality.
    * @param diffs List of Operations
    */
-  def cleanup(diffs: List[Operation]): List[Operation] = {
+  private def cleanMerge(diffs: List[Operation]): List[Operation] = {
     var buffer       = diffs :+ Operation(Equals, "")
     var deletes      = 0
     var inserts      = 0
@@ -275,8 +365,9 @@ object Diff {
       currentIndex = inc(currentIndex)
     }
 
-    if (changes) cleanup(buffer) else buffer
+    if (changes) cleanMerge(buffer) else buffer
   }
+
 
 
   /**
@@ -285,7 +376,7 @@ object Diff {
    * @param text2 Second string.
    * @return The number of characters common to the start of each string.
    */
-  def commonPrefix(text1: String, text2: String): Int = {
+  private def commonPrefix(text1: String, text2: String): Int = {
     // Performance analysis: http://neil.fraser.name/news/2007/10/09/
     val n = Math.min(text1.length, text2.length) - 1
     for (i <- 0 to n) {
@@ -302,7 +393,7 @@ object Diff {
    * @param text2 Second string.
    * @return The number of characters common to the end of each string.
    */
-  def commonSuffix(text1: String, text2: String): Int = {
+  private def commonSuffix(text1: String, text2: String): Int = {
     // Performance analysis: http://neil.fraser.name/news/2007/10/09/
     val (text1length, text2length) = (text1.length, text2.length)
     // Return early if strings are empty
