@@ -1,6 +1,5 @@
 package net.ironforged.scaladiff
 
-import net.ironforged.scaladiff._
 import net.ironforged.scaladiff.Commons._
 import net.ironforged.scaladiff.OperationType._
 
@@ -9,7 +8,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * Create a nice HTML report of the diff
    */
   def html: String = {
-    diffs.foldLeft("") { (html, diff) =>
+    Diff.cleanup(diffs).foldLeft("") { (html, diff) =>
       val text = diff.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "&para;<br>")
       val tag = diff.op match {
         case Insert => s"<ins>$text</ins>"
@@ -39,24 +38,17 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
   /**
    * Convert the diff into a more human-readable format
    */
-  /*private def humanize(): List[Operation] = {
-    var result = List.empty[Operation]
-
-    for (i <- 0 until diffs.indices.last) {
-      val current  = diffs(i)
-      val previous = if (diffs.indices.head == i) Operation(Equals, "") else diffs(i - 1)
-
-      current.op match {
-        case Insert => {
-          if (previous.op == Equals) {
-
-          }
-        }
+  def humanized: String = {
+    Diff.cleanup(diffs).foldLeft("") { (res, diff) =>
+      val text = diff.text
+      val op = diff.op match {
+        case Insert => s"+$text"
+        case Delete => s"-$text"
+        case Equals => text
       }
+      res + op
     }
-
-    result
-  }*/
+  }
 }
 
 object Diff {
@@ -157,168 +149,190 @@ object Diff {
    * Reorder and merge edits, equalities. Any edit section can move as long as it doesn't cross an equality.
    * @param diffs List of Operations
    */
-  def cleanup(diffs: List[Operation]): String = {
-    var buffer = List(Operation(Equals, ""))
-
+  def cleanup(diffs: List[Operation]): List[Operation] = {
+    var buffer       = diffs :+ Operation(Equals, "")
     var deletes      = 0
     var inserts      = 0
-    var commonLength = 0
     var deleted      = ""
     var inserted     = ""
-    var previous: Operation = null
     var currentIndex = 0
-    var current      = diffs.head
 
-    while (current != null) {
-      current.op match {
+    while (currentIndex < buffer.length) {
+      buffer(currentIndex).op match {
         case Insert => {
-          inserts   = inc(inserts)
-          inserted += current.text
-          buffer    = buffer :+ current
-          previous  = null
+          inserts       = inc(inserts)
+          inserted     += buffer(currentIndex).text
+          currentIndex  = inc(currentIndex)
         }
         case Delete => {
-          deletes  = inc(deletes)
-          deleted += current.text
-          buffer   = buffer :+ current
-          previous = null
+          deletes       = inc(deletes)
+          deleted      += buffer(currentIndex).text
+          currentIndex  = inc(currentIndex)
         }
         case Equals => {
+          // Upon reaching an equality, check for prior redundancies
           if (deletes + inserts > 1) {
-            val bothTypes = deletes != 0 && inserts != 0
-            // Delete
-
-          }
-        }
-      }
-
-      (currentIndex, current) =
-        if (diffs.length == currentIndex) {
-          (currentIndex, null)
-        } else {
-          (inc(currentIndex), diffs(inc(currentIndex)))
-        }
-
-      case EQUAL:
-        if (count_delete + count_insert > 1) {
-          boolean both_types = count_delete != 0 && count_insert != 0;
-          // Delete the offending records.
-          pointer.previous();  // Reverse direction.
-          while (count_delete-- > 0) {
-            pointer.previous();
-            pointer.remove();
-          }
-          while (count_insert-- > 0) {
-            pointer.previous();
-            pointer.remove();
-          }
-          if (both_types) {
-            // Factor out any common prefixies.
-            commonlength = diff_commonPrefix(text_insert, text_delete);
-            if (commonlength != 0) {
-              if (pointer.hasPrevious()) {
-                thisDiff = pointer.previous();
-                assert thisDiff.operation == Operation.EQUAL
-                  : "Previous diff should have been an equality.";
-                thisDiff.text += text_insert.substring(0, commonlength);
-                pointer.next();
-              } else {
-                pointer.add(new Diff(Operation.EQUAL,
-                  text_insert.substring(0, commonlength)));
+            if (deletes != 0 && inserts != 0) {
+              // Factor out any common prefixes
+              val prefixLength = commonPrefix(inserted, deleted)
+              if (prefixLength != 0) {
+                val idx = currentIndex - deletes - inserts
+                if (idx > 0 && buffer(idx - 1).op == Equals) {
+                  var op = buffer(idx - 1)
+                  op     = op.copy(op.op, op.text + inserted.substring(0, prefixLength))
+                  println("Factor prefixes (pre): " + buffer)
+                  buffer = (buffer.take(idx - 1) :+ op) ++ buffer.drop(idx)
+                  println("Factor prefixes (post): " + buffer)
+                }
+                else {
+                  println("Factor prefixes last (pre): " + buffer)
+                  buffer = Operation(Equals, inserted.substring(0, prefixLength)) +: buffer
+                  println("Factor prefixes last (post): " + buffer)
+                  currentIndex = inc(currentIndex)
+                }
+                inserted = inserted.substring(prefixLength, inserted.length - 1)
+                deleted  = deleted .substring(prefixLength, deleted.length - 1)
               }
-              text_insert = text_insert.substring(commonlength);
-              text_delete = text_delete.substring(commonlength);
+              // Factor out any common suffixes
+              val suffixLength = commonSuffix(inserted, deleted)
+              if (suffixLength != 0) {
+                var op = buffer(currentIndex)
+                op = op.copy(op.op, inserted.substring(inserted.length - suffixLength) + op.text)
+                println("Factor suffixes (pre): " + buffer)
+                buffer = (buffer.take(currentIndex) :+ op) ++ buffer.drop(currentIndex + 1)
+                println("Factor suffixes (post): " + buffer)
+              }
             }
-            // Factor out any common suffixies.
-            commonlength = diff_commonSuffix(text_insert, text_delete);
-            if (commonlength != 0) {
-              thisDiff = pointer.next();
-              thisDiff.text = text_insert.substring(text_insert.length()
-                - commonlength) + thisDiff.text;
-              text_insert = text_insert.substring(0, text_insert.length()
-                - commonlength);
-              text_delete = text_delete.substring(0, text_delete.length()
-                - commonlength);
-              pointer.previous();
+
+            // Delete the offending records and add the merged ones
+            if (deletes == 0) {
+              val taking   = currentIndex - deletes - inserts + 1
+              val dropping = taking + deletes + inserts + 1
+              println("Deletes (pre): " + buffer)
+              buffer = (buffer.take(taking) :+ Operation(Insert, inserted)) ++ buffer.drop(dropping)
+              println("Deletes (post): " + buffer)
             }
+            else if (inserts == 0) {
+              val taking   = currentIndex - deletes - inserts + 1
+              val dropping = taking + deletes + inserts + 1
+              println("Inserts (pre): " + buffer)
+              buffer = (buffer.take(taking) :+ Operation(Delete, deleted)) ++ buffer.drop(dropping)
+              println("Inserts (post): " + buffer)
+            }
+            else {
+              val taking   = currentIndex - deletes - inserts
+              val dropping = taking + deletes + inserts
+              println(s"Both (pre): buffer: $buffer")
+              println(s"Both (pre): current: $currentIndex, deletes: $deletes, inserts: $inserts, taking: $taking, dropping: $dropping")
+              println()
+              buffer = buffer.take(taking) ++ List(Operation(Delete, deleted), Operation(Insert, inserted)) ++ buffer.drop(dropping)
+              println()
+              println("Both (post): " + buffer)
+            }
+
+            currentIndex = currentIndex - deletes - inserts + (if (deletes == 0) 0 else 1) + (if (inserts == 0) 0 else 1) + 1
           }
-          // Insert the merged records.
-          if (text_delete.length() != 0) {
-            pointer.add(new Diff(Operation.DELETE, text_delete));
+          else if (currentIndex != 0 && buffer(currentIndex - 1).op == Equals) {
+            // Merge this equality with the previous one
+            val previous = buffer(currentIndex - 1)
+            val current  = buffer(currentIndex)
+            println("Merge equality (pre): " + buffer)
+            println()
+            buffer = (buffer.take(currentIndex - 1) :+ previous.copy(previous.op, previous.text + current.text)) ++ buffer.drop(currentIndex + 1)
+            currentIndex = dec(currentIndex)
+            println()
+            println("Merge equality (post): " + buffer)
           }
-          if (text_insert.length() != 0) {
-            pointer.add(new Diff(Operation.INSERT, text_insert));
+          else {
+            currentIndex = inc(currentIndex)
           }
-          // Step forward to the equality.
-          thisDiff = pointer.hasNext() ? pointer.next() : null;
-        } else if (prevEqual != null) {
-          // Merge this equality with the previous one.
-          prevEqual.text += thisDiff.text;
-          pointer.remove();
-          thisDiff = pointer.previous();
-          pointer.next();  // Forward direction
+
+          inserts = 0
+          deletes = 0
+          inserted = ""
+          deleted = ""
         }
-        count_insert = 0;
-        count_delete = 0;
-        text_delete = "";
-        text_insert = "";
-        prevEqual = thisDiff;
-        break;
       }
-      thisDiff = pointer.hasNext() ? pointer.next() : null;
-    }
-    if (diffs.getLast().text.length() == 0) {
-      diffs.removeLast();  // Remove the dummy entry at the end.
     }
 
-    /*
-     * Second pass: look for single edits surrounded on both sides by equalities
-     * which can be shifted sideways to eliminate an equality.
-     * e.g: A<ins>BA</ins>C -> <ins>AB</ins>AC
-     */
-    boolean changes = false;
-    // Create a new iterator at the start.
-    // (As opposed to walking the current one back.)
-    pointer = diffs.listIterator();
-    Diff prevDiff = pointer.hasNext() ? pointer.next() : null;
-    thisDiff = pointer.hasNext() ? pointer.next() : null;
-    Diff nextDiff = pointer.hasNext() ? pointer.next() : null;
-    // Intentionally ignore the first and last element (don't need checking).
-    while (nextDiff != null) {
-      if (prevDiff.operation == Operation.EQUAL &&
-        nextDiff.operation == Operation.EQUAL) {
-        // This is a single edit surrounded by equalities.
-        if (thisDiff.text.endsWith(prevDiff.text)) {
-          // Shift the edit over the previous equality.
-          thisDiff.text = prevDiff.text
-          + thisDiff.text.substring(0, thisDiff.text.length()
-            - prevDiff.text.length());
-          nextDiff.text = prevDiff.text + nextDiff.text;
-          pointer.previous(); // Walk past nextDiff.
-          pointer.previous(); // Walk past thisDiff.
-          pointer.previous(); // Walk past prevDiff.
-          pointer.remove(); // Delete prevDiff.
-          pointer.next(); // Walk past thisDiff.
-          thisDiff = pointer.next(); // Walk past nextDiff.
-          nextDiff = pointer.hasNext() ? pointer.next() : null;
-          changes = true;
-        } else if (thisDiff.text.startsWith(nextDiff.text)) {
-          // Shift the edit over the next equality.
-          prevDiff.text += nextDiff.text;
-          thisDiff.text = thisDiff.text.substring(nextDiff.text.length())
-          + nextDiff.text;
-          pointer.remove(); // Delete nextDiff.
-          nextDiff = pointer.hasNext() ? pointer.next() : null;
-          changes = true;
+    if (buffer.last.text == "") {
+      buffer = buffer.dropRight(1) // Remove the dummy entry at the end
+    }
+
+    // Second pass: look for single edits surrounded on both sides by equalities
+    // which can be shifted sideways to eliminate an equality
+    // e.g. A<ins>BA</ins>C -> <ins>AB</ins>AC
+    var changes = false
+    currentIndex = 1
+
+    // Intentionally ignore the first and last element (don't need checking)
+    while (currentIndex < buffer.length - 1) {
+      var previous = buffer(currentIndex - 1)
+      var current  = buffer(currentIndex)
+      var next     = buffer(currentIndex + 1)
+
+      if (previous.op == Equals && next.op == Equals) {
+        // This is a single edit surrounded by equalities
+        if (current.text.endsWith(previous.text)) {
+          current = current.copy(current.op, previous.text + current.text.substring(0, previous.text.length))
+          next    = next.copy(next.op, previous.text + next.text)
+          // Shift the edit over the previous equality
+          buffer = buffer.take(currentIndex) ++ List(current, next) ++ buffer.drop(currentIndex + 2)
+          changes = true
+        }
+        else {
+          if (current.text.startsWith(next.text)) {
+            // Shift the edit over the next equality
+            previous = previous.copy(previous.op, previous.text + next.text)
+            current  = current.copy(current.op, current.text.substring(current.text.length - next.text.length) + next.text)
+            buffer = buffer.take(currentIndex - 1) ++ List(previous, current) ++ buffer.drop(currentIndex + 1)
+            changes = true
+          }
         }
       }
-      prevDiff = thisDiff;
-      thisDiff = nextDiff;
-      nextDiff = pointer.hasNext() ? pointer.next() : null;
+
+      currentIndex = inc(currentIndex)
     }
-    // If shifts were made, the diff needs reordering and another shift sweep.
-    if (changes) {
-      diff_cleanupMerge(diffs);
+
+    if (changes) cleanup(buffer) else buffer
+  }
+
+
+  /**
+   * Determine the common prefix of two strings
+   * @param text1 First string.
+   * @param text2 Second string.
+   * @return The number of characters common to the start of each string.
+   */
+  def commonPrefix(text1: String, text2: String): Int = {
+    // Performance analysis: http://neil.fraser.name/news/2007/10/09/
+    val n = Math.min(text1.length, text2.length) - 1
+    for (i <- 0 to n) {
+      if (text1.charAt(i) != text2.charAt(i)) {
+        return i
+      }
     }
+    n
+  }
+
+  /**
+   * Determine the common suffix of two strings
+   * @param text1 First string.
+   * @param text2 Second string.
+   * @return The number of characters common to the end of each string.
+   */
+  def commonSuffix(text1: String, text2: String): Int = {
+    // Performance analysis: http://neil.fraser.name/news/2007/10/09/
+    val (text1length, text2length) = (text1.length, text2.length)
+    // Return early if strings are empty
+    if (text1length == 0 || text2length == 0)
+      return 0
+    val n = Math.min(text1length, text2length) - 1
+    for (i <- 1 to n) {
+      if (text1.charAt(text1length - i) != text2.charAt(text2length - i)) {
+        return i - 1
+      }
+    }
+    n
   }
 }
