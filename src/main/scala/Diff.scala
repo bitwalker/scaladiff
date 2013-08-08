@@ -12,7 +12,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
       val text = diff.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "&para;<br>")
       val tag = diff.op match {
         case Insert => s"<ins>$text</ins>"
-        case Delete => s"<del>$text</ins>"
+        case Delete => s"<del>$text</del>"
         case Equals => s"<span>$text</span>"
       }
       html + tag
