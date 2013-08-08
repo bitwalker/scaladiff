@@ -184,8 +184,7 @@ object Diff {
       currentIndex = inc(currentIndex)
     }
 
-    //if (changes) cleanup(buffer) else buffer
-    cleanMerge(buffer)
+    if (changes) cleanMerge(buffer) else buffer
   }
 
   /**
