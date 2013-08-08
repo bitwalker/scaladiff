@@ -180,14 +180,10 @@ object Diff {
                 if (idx > 0 && buffer(idx - 1).op == Equals) {
                   var op = buffer(idx - 1)
                   op     = op.copy(op.op, op.text + inserted.substring(0, prefixLength))
-                  println("Factor prefixes (pre): " + buffer)
                   buffer = (buffer.take(idx - 1) :+ op) ++ buffer.drop(idx)
-                  println("Factor prefixes (post): " + buffer)
                 }
                 else {
-                  println("Factor prefixes last (pre): " + buffer)
                   buffer = Operation(Equals, inserted.substring(0, prefixLength)) +: buffer
-                  println("Factor prefixes last (post): " + buffer)
                   currentIndex = inc(currentIndex)
                 }
                 inserted = inserted.substring(prefixLength, inserted.length - 1)
@@ -197,10 +193,8 @@ object Diff {
               val suffixLength = commonSuffix(inserted, deleted)
               if (suffixLength != 0) {
                 var op = buffer(currentIndex)
-                op = op.copy(op.op, inserted.substring(inserted.length - suffixLength) + op.text)
-                println("Factor suffixes (pre): " + buffer)
+                op     = op.copy(op.op, inserted.substring(inserted.length - suffixLength) + op.text)
                 buffer = (buffer.take(currentIndex) :+ op) ++ buffer.drop(currentIndex + 1)
-                println("Factor suffixes (post): " + buffer)
               }
             }
 
@@ -208,26 +202,17 @@ object Diff {
             if (deletes == 0) {
               val taking   = currentIndex - deletes - inserts + 1
               val dropping = taking + deletes + inserts + 1
-              println("Deletes (pre): " + buffer)
               buffer = (buffer.take(taking) :+ Operation(Insert, inserted)) ++ buffer.drop(dropping)
-              println("Deletes (post): " + buffer)
             }
             else if (inserts == 0) {
               val taking   = currentIndex - deletes - inserts + 1
               val dropping = taking + deletes + inserts + 1
-              println("Inserts (pre): " + buffer)
               buffer = (buffer.take(taking) :+ Operation(Delete, deleted)) ++ buffer.drop(dropping)
-              println("Inserts (post): " + buffer)
             }
             else {
               val taking   = currentIndex - deletes - inserts
               val dropping = taking + deletes + inserts
-              println(s"Both (pre): buffer: $buffer")
-              println(s"Both (pre): current: $currentIndex, deletes: $deletes, inserts: $inserts, taking: $taking, dropping: $dropping")
-              println()
               buffer = buffer.take(taking) ++ List(Operation(Delete, deleted), Operation(Insert, inserted)) ++ buffer.drop(dropping)
-              println()
-              println("Both (post): " + buffer)
             }
 
             currentIndex = currentIndex - deletes - inserts + (if (deletes == 0) 0 else 1) + (if (inserts == 0) 0 else 1) + 1
@@ -236,21 +221,17 @@ object Diff {
             // Merge this equality with the previous one
             val previous = buffer(currentIndex - 1)
             val current  = buffer(currentIndex)
-            println("Merge equality (pre): " + buffer)
-            println()
             buffer = (buffer.take(currentIndex - 1) :+ previous.copy(previous.op, previous.text + current.text)) ++ buffer.drop(currentIndex + 1)
             currentIndex = dec(currentIndex)
-            println()
-            println("Merge equality (post): " + buffer)
           }
           else {
             currentIndex = inc(currentIndex)
           }
 
-          inserts = 0
-          deletes = 0
+          inserts  = 0
+          deletes  = 0
           inserted = ""
-          deleted = ""
+          deleted  = ""
         }
       }
     }
@@ -277,7 +258,7 @@ object Diff {
           current = current.copy(current.op, previous.text + current.text.substring(0, previous.text.length))
           next    = next.copy(next.op, previous.text + next.text)
           // Shift the edit over the previous equality
-          buffer = buffer.take(currentIndex) ++ List(current, next) ++ buffer.drop(currentIndex + 2)
+          buffer  = buffer.take(currentIndex) ++ List(current, next) ++ buffer.drop(currentIndex + 2)
           changes = true
         }
         else {
@@ -285,8 +266,8 @@ object Diff {
             // Shift the edit over the next equality
             previous = previous.copy(previous.op, previous.text + next.text)
             current  = current.copy(current.op, current.text.substring(current.text.length - next.text.length) + next.text)
-            buffer = buffer.take(currentIndex - 1) ++ List(previous, current) ++ buffer.drop(currentIndex + 1)
-            changes = true
+            buffer   = buffer.take(currentIndex - 1) ++ List(previous, current) ++ buffer.drop(currentIndex + 1)
+            changes  = true
           }
         }
       }
