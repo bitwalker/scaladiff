@@ -1,7 +1,14 @@
 package net.ironforged.scaladiff
 
 object Commons {
+  /**
+   * Increment an integer value
+   */
   def inc(x: Int): Int = x + 1
+
+  /**
+   * Decrement an integer value
+   */
   def dec(x: Int): Int = x - 1
 
   /**
