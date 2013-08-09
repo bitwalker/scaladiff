@@ -61,4 +61,29 @@ object Commons {
     xs.take(start) ++ elements ++ xs.drop(end)
   }
 
+  /**
+   * A safe substring operation that starts at the beginning of the string and selects towards the end
+   * @param s The source string
+   * @param x The number of characters to select
+   * @return String
+   */
+  def sliceLeft(s: String, x: Int): String = {
+    if (s == null)          return ""
+    else if (x <= 0)        return ""
+    else if (x > s.length)  return s
+    else                    s.substring(0, x)
+  }
+
+  /**
+   * A safe substring operation that starts at the end of the string and selects towards the beginning
+   * @param s The source string
+   * @param x The number of characters to select
+   * @return String
+   */
+  def sliceRight(s: String, x: Int): String = {
+    if (s == null)         return ""
+    else if (x <= 0)       return ""
+    else if (x > s.length) return s
+    else                   s.substring(s.length - x)
+  }
 }
