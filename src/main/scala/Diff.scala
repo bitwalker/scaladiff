@@ -102,7 +102,6 @@ object Diff {
     Diff(a, b, result)
   }
 
-
   /**
    * Eliminate operationally trivial equalities, then reorder and merge both edits and equalities.
    * @param diffs List[Operation]
@@ -153,17 +152,8 @@ object Diff {
         if (!lastEquality.isEmpty && (bools.forall(b=>b) || ((lastEquality.length < MAX_EDIT_COST / 2) && bools.filter(b=>b).length == 3))) {
           // Duplicate record
           // Change second copy to insert
-          println()
-          println(s"PRE: buffer: $buffer")
-          val lastEqualityIdx = equalities.last
-          val nextItem = buffer(equalities.last + 1).text
-          println(s"PRE: currentIndex: $currentIndex, lastEquality: $lastEquality, nextOne: $nextItem")
-          buffer = buffer.take(equalities.last) ++
-            List(Operation(Delete, lastEquality), Operation(Insert, lastEquality)) ++
-            buffer.drop(equalities.last + 1)
+          buffer     = replace(buffer, equalities.last, equalities.last + 1, List(Operation(Delete, lastEquality), Operation(Insert, lastEquality)))
           equalities = equalities.dropRight(1)
-          println()
-          println(s"POST: buffer: $buffer")
           lastEquality = ""
           if (preInsert && preDelete) {
             // No changes made which could affect previous entry, keep going
