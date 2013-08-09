@@ -4,6 +4,22 @@ import net.ironforged.scaladiff.Commons._
 import net.ironforged.scaladiff.OperationType._
 
 case class Diff(original: String, modified: String, diffs: List[Operation]) {
+
+  /**
+   * The unaltered diff result
+   */
+  override def toString: String = {
+    diffs.foldLeft("") { (res, diff) =>
+      val text = diff.text
+      val op = diff.op match {
+        case Insert => s"+$text"
+        case Delete => s"-$text"
+        case Equals => text
+      }
+      res + op
+    }
+  }
+
   /**
    * Create a nice HTML report of the diff
    */
@@ -19,21 +35,6 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
     }
   }
 
-  /**
-   * Create a unidiff
-   */
-  def unidiff: String = {
-    // TODO: Make this an actual unidiff
-    diffs.foldLeft("") { (res, diff) =>
-      val text = diff.text
-      val op = diff.op match {
-        case Insert => s"+$text"
-        case Delete => s"-$text"
-        case Equals => text
-      }
-      res + op
-    }
-  }
 
   /**
    * Convert the diff into a more human-readable format
