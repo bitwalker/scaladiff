@@ -9,15 +9,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * The unaltered diff result
    */
   override def toString: String = {
-    diffs.foldLeft("") { (res, diff) =>
-      val text = diff.text
-      val op = diff.op match {
-        case Insert => s"+$text"
-        case Delete => s"-$text"
-        case Equals => text
-      }
-      res + op
-    }
+    diffs.foldLeft("") { (res, diff) => res + diff.toString }
   }
 
   /**
@@ -40,15 +32,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * Convert the diff into a more human-readable format
    */
   def humanized: String = {
-    Diff.clean(diffs).foldLeft("") { (res, diff) =>
-      val text = diff.text
-      val op = diff.op match {
-        case Insert => s"+$text"
-        case Delete => s"-$text"
-        case Equals => text
-      }
-      res + op
-    }
+    Diff.clean(diffs).foldLeft("") { (res, diff) => res + diff.toString }
   }
 }
 
