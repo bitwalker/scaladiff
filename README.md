@@ -1,6 +1,6 @@
 ## What is it?
 
-A Scala library for performing diffs over plain text. Results can be produced in unidiff or html formats. The base 
+A Scala library for performing diffs over plain text. Results can be produced in raw, cleaned (human readable), or html formats. The base 
 diff algorithm used is [Myer's diff algorithm](http://www.xmailserver.org/diff2.pdf).
 
 ## Current Status
