@@ -259,49 +259,49 @@ object Diff {
                 val idx = currentIndex - deletes - inserts
                 if (idx > 0 && buffer(idx - 1).op == Equals) {
                   var op = buffer(idx - 1)
-                  op     = op.copy(op.op, op.text + inserted.substring(0, prefixLength))
-                  buffer = (buffer.take(idx - 1) :+ op) ++ buffer.drop(idx)
+                  op     = op.copy(op.op, op.text + sliceLeft(inserted, prefixLength))
+                  buffer = insert(buffer, idx, op)
                 }
                 else {
-                  buffer = Operation(Equals, inserted.substring(0, prefixLength)) +: buffer
+                  buffer = Operation(Equals, sliceLeft(inserted, prefixLength)) +: buffer
                   currentIndex = inc(currentIndex)
                 }
                 inserted = inserted.substring(prefixLength, inserted.length - 1)
-                deleted  = deleted .substring(prefixLength, deleted.length - 1)
+                deleted  = deleted.substring(prefixLength, deleted.length - 1)
               }
               // Factor out any common suffixes
               val suffixLength = commonSuffix(inserted, deleted)
               if (suffixLength != 0) {
                 var op = buffer(currentIndex)
-                op     = op.copy(op.op, inserted.substring(inserted.length - suffixLength) + op.text)
-                buffer = (buffer.take(currentIndex) :+ op) ++ buffer.drop(currentIndex + 1)
+                op     = op.copy(op.op, sliceRight(inserted, suffixLength) + op.text)
+                buffer = insert(buffer, currentIndex, op)
               }
             }
 
             // Delete the offending records and add the merged ones
             if (deletes == 0) {
-              val taking   = currentIndex - deletes - inserts + 1
-              val dropping = taking + deletes + inserts + 1
-              buffer = (buffer.take(taking) :+ Operation(Insert, inserted)) ++ buffer.drop(dropping)
+              val start = currentIndex - deletes - inserts
+              val end   = start + deletes + inserts
+              buffer    = replace(buffer, start, end, Operation(Insert, inserted))
             }
             else if (inserts == 0) {
-              val taking   = currentIndex - deletes - inserts + 1
-              val dropping = taking + deletes + inserts + 1
-              buffer = (buffer.take(taking) :+ Operation(Delete, deleted)) ++ buffer.drop(dropping)
+              val start = currentIndex - deletes - inserts
+              val end   = start + deletes + inserts
+              buffer    = replace(buffer, start, end, Operation(Delete, deleted))
             }
             else {
-              val taking   = currentIndex - deletes - inserts
-              val dropping = taking + deletes + inserts
-              buffer = buffer.take(taking) ++ List(Operation(Delete, deleted), Operation(Insert, inserted)) ++ buffer.drop(dropping)
+              val start = currentIndex - deletes - inserts
+              val end   = start + deletes + inserts
+              buffer    = replace(buffer, start, end, List(Operation(Delete, deleted), Operation(Insert, inserted)))
             }
 
-            currentIndex = currentIndex - deletes - inserts + (if (deletes == 0) 0 else 1) + (if (inserts == 0) 0 else 1) + 1
+            currentIndex = (currentIndex - deletes - inserts) + (if (deletes == 0) 0 else 1) + (if (inserts == 0) 0 else 1) + 1
           }
           else if (currentIndex != 0 && buffer(currentIndex - 1).op == Equals) {
             // Merge this equality with the previous one
             val previous = buffer(currentIndex - 1)
             val current  = buffer(currentIndex)
-            buffer = (buffer.take(currentIndex - 1) :+ previous.copy(previous.op, previous.text + current.text)) ++ buffer.drop(currentIndex + 1)
+            buffer = replace(buffer, currentIndex - 1, currentIndex + 1, previous.copy(previous.op, previous.text + current.text))
             currentIndex = dec(currentIndex)
           }
           else {
@@ -335,18 +335,18 @@ object Diff {
       if (previous.op == Equals && next.op == Equals) {
         // This is a single edit surrounded by equalities
         if (current.text.endsWith(previous.text)) {
-          current = current.copy(current.op, previous.text + current.text.substring(0, previous.text.length))
+          current = current.copy(current.op, previous.text + sliceLeft(current.text, previous.text.length))
           next    = next.copy(next.op, previous.text + next.text)
           // Shift the edit over the previous equality
-          buffer  = buffer.take(currentIndex) ++ List(current, next) ++ buffer.drop(currentIndex + 2)
+          buffer  = replace(buffer, currentIndex, currentIndex + 2, List(current, next))
           changes = true
         }
         else {
           if (current.text.startsWith(next.text)) {
             // Shift the edit over the next equality
             previous = previous.copy(previous.op, previous.text + next.text)
-            current  = current.copy(current.op, current.text.substring(current.text.length - next.text.length) + next.text)
-            buffer   = buffer.take(currentIndex - 1) ++ List(previous, current) ++ buffer.drop(currentIndex + 1)
+            current  = current.copy(current.op, sliceRight(current.text, next.text.length) + next.text)
+            buffer   = replace(buffer, currentIndex - 1, currentIndex + 1, List(previous, current))
             changes  = true
           }
         }
