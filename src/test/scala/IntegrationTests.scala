@@ -45,6 +45,6 @@ class IntegrationSuite extends FunSuite {
         |+[Donec rhoncus congue risus ac viverra.
         |]Integer feugiat felis molestie sodales scelerisque.""".stripMargin)
 
-    diff.html should equal("<span>&para;<br>Lorem ipsum </span><ins>amet sit </ins><span>dolor</span><del> sit amet</del><span>, consectetur adipiscing elit.&para;<br></span><del>Donec rhoncus congue risus ac viverra.&para;<br></del><span>Praesent varius orci quis turpis vestibulum, eget molestie augue aliquet.&para;<br></span><ins>Donec rhoncus congue risus ac viverra.&para;<br></ins><span>Integer feugiat felis molestie sodales scelerisque.</span>")
+    diff.html should equal("<span><br>Lorem ipsum </span><ins>amet sit </ins><span>dolor</span><del> sit amet</del><span>, consectetur adipiscing elit.<br></span><del>Donec rhoncus congue risus ac viverra.<br></del><span>Praesent varius orci quis turpis vestibulum, eget molestie augue aliquet.<br></span><ins>Donec rhoncus congue risus ac viverra.<br></ins><span>Integer feugiat felis molestie sodales scelerisque.</span>")
   }
 }
