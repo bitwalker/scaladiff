@@ -5,18 +5,17 @@ diff algorithm used is [Myer's diff algorithm](http://www.xmailserver.org/diff2.
 
 ## Current Status
 
-Not stable at all, and fluctuates between working and not working as bugs are tackled, fixed, and uncovered.
-I would not use this yet, however the API is beginning to firm up, and it does produce usable diffs, in raw, cleaned,
-and html formats. It does not yet produce unidiff output, though I do plan on making that a feature. The diffs
-are relatively untested, which is why I say it fluctuates between working states - it works until I find the next
-bug essentially.
+The API is mostly firmed up, and it does produce accurate diffs (to the degree that my unit tests have verified this), 
+in raw, cleaned, and html formats. It does not yet produce unidiff output, though I do plan on making that a feature. 
+I would advise using this for experimental work, and report all bugs to me so that I can get them fixed up and wrap some
+unit tests around them. I would like to get this stable and production ready as soon as possible, but I just don't feel
+comfortable with the level of testing just yet.
 
 ## Roadmap
 
-- Wrap tests around current features
 - Add unidiff output
 - More tests
-- Stress tests
+- Stress tests (how large can the source/modified text get before we're crawling)
 - The ability to apply a diff as a patch to some text to produce the original version
 
 ## LICENSE
