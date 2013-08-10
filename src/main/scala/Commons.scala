@@ -1,6 +1,6 @@
 package net.ironforged.scaladiff
 
-object Commons {
+package object commons {
   /**
    * Increment an integer value
    */

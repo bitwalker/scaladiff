@@ -1,6 +1,6 @@
 package net.ironforged.scaladiff
 
-import net.ironforged.scaladiff.Commons._
+import net.ironforged.scaladiff.commons._
 import net.ironforged.scaladiff.OperationType._
 
 case class Diff(original: String, modified: String, diffs: List[Operation]) {
