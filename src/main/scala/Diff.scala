@@ -136,7 +136,7 @@ object Diff {
         if (!lastEquality.isEmpty && (bools.forall(b=>b) || ((lastEquality.length < MAX_EDIT_COST / 2) && bools.filter(b=>b).length == 3))) {
           // Duplicate record
           // Change second copy to insert
-          buffer     = replace(buffer, equalities.last, equalities.last + 1, List(Operation(Delete, lastEquality), Operation(Insert, lastEquality)))
+          buffer     = replace(buffer, equalities.last, 1)(Operation(Delete, lastEquality), Operation(Insert, lastEquality))
           equalities = equalities.dropRight(1)
           lastEquality = ""
           if (preInsert && preDelete) {
@@ -244,7 +244,7 @@ object Diff {
                 if (idx > 0 && buffer(idx - 1).op == Equals) {
                   var op = buffer(idx - 1)
                   op     = op.copy(op.op, op.text + sliceLeft(inserted, prefixLength))
-                  buffer = insert(buffer, idx, op)
+                  buffer = insert(buffer, idx)(op)
                 }
                 else {
                   buffer = Operation(Equals, sliceLeft(inserted, prefixLength)) +: buffer
@@ -258,25 +258,22 @@ object Diff {
               if (suffixLength != 0) {
                 var op = buffer(currentIndex)
                 op     = op.copy(op.op, sliceRight(inserted, suffixLength) + op.text)
-                buffer = insert(buffer, currentIndex, op)
+                buffer = insert(buffer, currentIndex)(op)
               }
             }
 
             // Delete the offending records and add the merged ones
             if (deletes == 0) {
               val start = currentIndex - deletes - inserts
-              val end   = start + deletes + inserts
-              buffer    = replace(buffer, start, end, Operation(Insert, inserted))
+              buffer    = replace(buffer, start, deletes + inserts)(Operation(Insert, inserted))
             }
             else if (inserts == 0) {
               val start = currentIndex - deletes - inserts
-              val end   = start + deletes + inserts
-              buffer    = replace(buffer, start, end, Operation(Delete, deleted))
+              buffer    = replace(buffer, start, deletes + inserts)(Operation(Delete, deleted))
             }
             else {
               val start = currentIndex - deletes - inserts
-              val end   = start + deletes + inserts
-              buffer    = replace(buffer, start, end, List(Operation(Delete, deleted), Operation(Insert, inserted)))
+              buffer    = replace(buffer, start, deletes + inserts)(Operation(Delete, deleted), Operation(Insert, inserted))
             }
 
             currentIndex = (currentIndex - deletes - inserts) + (if (deletes == 0) 0 else 1) + (if (inserts == 0) 0 else 1) + 1
@@ -285,7 +282,7 @@ object Diff {
             // Merge this equality with the previous one
             val previous = buffer(currentIndex - 1)
             val current  = buffer(currentIndex)
-            buffer = replace(buffer, currentIndex - 1, currentIndex + 1, previous.copy(previous.op, previous.text + current.text))
+            buffer = replace(buffer, currentIndex - 1, 2)(previous.copy(previous.op, previous.text + current.text))
             currentIndex -= 1
           }
           else {
@@ -322,7 +319,7 @@ object Diff {
           current = current.copy(current.op, previous.text + sliceLeft(current.text, previous.text.length))
           next    = next.copy(next.op, previous.text + next.text)
           // Shift the edit over the previous equality
-          buffer  = replace(buffer, currentIndex, currentIndex + 2, List(current, next))
+          buffer  = replace(buffer, currentIndex, 2)(current, next)
           changes = true
         }
         else {
@@ -330,7 +327,7 @@ object Diff {
             // Shift the edit over the next equality
             previous = previous.copy(previous.op, previous.text + next.text)
             current  = current.copy(current.op, sliceRight(current.text, next.text.length) + next.text)
-            buffer   = replace(buffer, currentIndex - 1, currentIndex + 1, List(previous, current))
+            buffer   = replace(buffer, currentIndex - 1, 2)(previous, current)
             changes  = true
           }
         }
