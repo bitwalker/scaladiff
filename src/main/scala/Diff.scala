@@ -27,12 +27,18 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
     }
   }
 
-
   /**
    * Convert the diff into a more human-readable format
    */
   def humanized: String = {
-    Diff.clean(diffs).mkString
+    Diff.clean(diffs).foldLeft("") { (res, diff) =>
+      val text = diff.op match {
+        case Insert => s"+[${diff.text}]"
+        case Delete => s"-[${diff.text}]"
+        case Equals => diff.text
+      }
+      res + text
+    }
   }
 }
 

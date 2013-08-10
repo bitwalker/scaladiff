@@ -34,7 +34,7 @@ class DiffSuite extends FunSuite with PrivateMethodTester {
 
   test("a humanized diff merges like operations and equalities") {
     val diff = Diff(original, modified, ops)
-    diff.humanized should equal("bills -boa+swords")
+    diff.humanized should equal("bills -[boa]+[swo]rds")
   }
 
   test("a diff when converted to html is also humanized") {
