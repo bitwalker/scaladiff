@@ -165,7 +165,7 @@ object Diff {
       currentIndex += 1
     }
 
-    if (changes) cleanMerge(buffer) else buffer
+    cleanMerge(buffer)
   }
 
   /**
