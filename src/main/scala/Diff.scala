@@ -156,7 +156,7 @@ object Diff {
           changes = true
         }
       }
-      currentIndex = inc(currentIndex)
+      currentIndex += 1
     }
 
     if (changes) cleanMerge(buffer) else buffer
@@ -224,14 +224,14 @@ object Diff {
     while (currentIndex < buffer.length) {
       buffer(currentIndex).op match {
         case Insert => {
-          inserts       = inc(inserts)
+          inserts      += 1
           inserted     += buffer(currentIndex).text
-          currentIndex  = inc(currentIndex)
+          currentIndex += 1
         }
         case Delete => {
-          deletes       = inc(deletes)
+          deletes      += 1
           deleted      += buffer(currentIndex).text
-          currentIndex  = inc(currentIndex)
+          currentIndex += 1
         }
         case Equals => {
           // Upon reaching an equality, check for prior redundancies
@@ -248,7 +248,7 @@ object Diff {
                 }
                 else {
                   buffer = Operation(Equals, sliceLeft(inserted, prefixLength)) +: buffer
-                  currentIndex = inc(currentIndex)
+                  currentIndex += 1
                 }
                 inserted = inserted.substring(prefixLength, inserted.length - 1)
                 deleted  = deleted.substring(prefixLength, deleted.length - 1)
@@ -286,10 +286,10 @@ object Diff {
             val previous = buffer(currentIndex - 1)
             val current  = buffer(currentIndex)
             buffer = replace(buffer, currentIndex - 1, currentIndex + 1, previous.copy(previous.op, previous.text + current.text))
-            currentIndex = dec(currentIndex)
+            currentIndex -= 1
           }
           else {
-            currentIndex = inc(currentIndex)
+            currentIndex += 1
           }
 
           inserts  = 0
@@ -336,7 +336,7 @@ object Diff {
         }
       }
 
-      currentIndex = inc(currentIndex)
+      currentIndex += 1
     }
 
     if (changes) cleanMerge(buffer) else buffer

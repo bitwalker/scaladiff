@@ -2,16 +2,6 @@ package net.ironforged.scaladiff
 
 package object commons {
   /**
-   * Increment an integer value
-   */
-  def inc(x: Int): Int = x + 1
-
-  /**
-   * Decrement an integer value
-   */
-  def dec(x: Int): Int = x - 1
-
-  /**
    * Insert an element within a list
    * @param xs The target list
    * @param index The index at which to insert the new element
