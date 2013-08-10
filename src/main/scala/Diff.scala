@@ -9,7 +9,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * The unaltered diff result
    */
   override def toString: String = {
-    diffs.foldLeft("") { (res, diff) => res + diff.toString }
+    diffs.mkString
   }
 
   /**
@@ -32,7 +32,7 @@ case class Diff(original: String, modified: String, diffs: List[Operation]) {
    * Convert the diff into a more human-readable format
    */
   def humanized: String = {
-    Diff.clean(diffs).foldLeft("") { (res, diff) => res + diff.toString }
+    Diff.clean(diffs).mkString
   }
 }
 
