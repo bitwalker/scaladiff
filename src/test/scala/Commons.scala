@@ -34,6 +34,17 @@ class CommonsSuite extends FunSuite {
     li should equal(List(1, 2, 80, 90, 100))
   }
 
+  test("can safely slice a string from any starting position for any number of characters") {
+    val str = "testing"
+    slice(str, -1, 4)   should equal("")
+    slice(str, 0, -1)   should equal("")
+    slice(str, 0, 4)    should equal("test")
+    slice(str, 2, 4)    should equal("stin")
+    slice(str, 10, 4)   should equal("")
+    slice(str, 4, 10)   should equal("ing")
+    slice(str, 10, 10)  should equal("")
+  }
+
   test("can safely slice a string from the beginning regardless of it's length") {
     val str = "testing"
     sliceLeft(str, -1)  should equal("")

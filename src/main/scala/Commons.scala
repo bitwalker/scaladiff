@@ -27,6 +27,22 @@ package object commons {
   }
 
   /**
+   * A safe substring operation that starts at the provided index and ends either at the end of the string
+   * or after `length` characters have been sliced
+   * @param s The source string
+   * @param start The index to start slicing at
+   * @param length The number of characters to slice
+   * @return String
+   */
+  def slice(s: String, start: Int, length: Int): String = {
+    if (s == null)                       return ""
+    else if (start < 0 || length < 0)    return ""
+    else if (start > s.length)           return ""
+    else if (length >= s.length - start) return s.substring(start)
+    else                                 s.substring(start, start + length)
+  }
+
+  /**
    * A safe substring operation that starts at the beginning of the string and selects towards the end
    * @param s The source string
    * @param x The number of characters to select
