@@ -43,6 +43,8 @@ class CommonsSuite extends FunSuite {
     slice(str, 10, 4)   should equal("")
     slice(str, 4, 10)   should equal("ing")
     slice(str, 10, 10)  should equal("")
+    slice(str, 4)       should equal("ing")
+    slice(str, 0)       should equal("testing")
   }
 
   test("can safely slice a string from the beginning regardless of it's length") {

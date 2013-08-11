@@ -34,12 +34,13 @@ package object commons {
    * @param length The number of characters to slice
    * @return String
    */
-  def slice(s: String, start: Int, length: Int): String = {
-    if (s == null)                       return ""
-    else if (start < 0 || length < 0)    return ""
-    else if (start > s.length)           return ""
-    else if (length >= s.length - start) return s.substring(start)
-    else                                 s.substring(start, start + length)
+  def slice(s: String, start: Int, length: Int = Int.MinValue): String = {
+    val len = if (length == Int.MinValue) s.length - start else length
+    if (s == null)                    return ""
+    else if (start < 0 || len < 0)    return ""
+    else if (start > s.length)        return ""
+    else if (len >= s.length - start) return s.substring(start)
+    else                              s.substring(start, start + len)
   }
 
   /**
