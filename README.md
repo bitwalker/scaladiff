@@ -11,6 +11,30 @@ I would advise using this for experimental work, and report all bugs to me so th
 unit tests around them. I would like to get this stable and production ready as soon as possible, but I just don't feel
 comfortable with the level of testing just yet.
 
+# Installation
+
+Add the following to your Build.scala file:
+
+```
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
+libraryDependencies ++= Seq(
+    ... other dependencies ...
+    "net.ironforged" % "scaladiff_2.10" % "0.1-SNAPSHOT"
+)
+```
+
+# Usage
+
+Import `net.irongforged.scaladiff.Diff` and create a Diff instance with `val diff = Diff.create(originalText, modifiedText)`. 
+You can then access the diff text using one of three variations:
+
+- `diff.toString` is the raw diff (ex. `bills +s+w-bo-ards`)
+- `diff.humanized` is the more readable version of the diff (ex. `bills -[boa]+[swo]rds`)
+- `diff.html` is the html version of the humanized diff for display on a web page
+
+Unidiff output will be added soon!
+
 ## Roadmap
 
 - Add unidiff output
