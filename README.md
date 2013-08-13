@@ -11,7 +11,7 @@ I would advise using this for experimental work, and report all bugs to me so th
 unit tests around them. I would like to get this stable and production ready as soon as possible, but I just don't feel
 comfortable with the level of testing just yet.
 
-# Installation
+## Installation
 
 Add the following to your Build.scala file:
 
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-# Usage
+## Usage
 
 Import `net.irongforged.scaladiff.Diff` and create a Diff instance with `val diff = Diff.create(originalText, modifiedText)`. 
 You can then access the diff text using one of three variations:
