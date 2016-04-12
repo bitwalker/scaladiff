@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
 
 ## Usage
 
-Import `net.irongforged.scaladiff.Diff` and create a Diff instance with `val diff = Diff.create(originalText, modifiedText)`. 
+Import `net.ironforged.scaladiff.Diff` and create a Diff instance with `val diff = Diff.create(originalText, modifiedText)`. 
 You can then access the diff text using one of three variations:
 
 - `diff.toString` is the raw diff (ex. `bills +s+w-bo-ards`)
